@@ -1,0 +1,7 @@
+{
+  "name": "Codexia",
+  "description": "A next-generation browser-based IDE landing page featuring a live AI code generation demo.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
