@@ -20,13 +20,12 @@ const Navbar: React.FC<NavbarProps> = ({ onStartCoding }) => {
   }, []);
 
   return (
-    <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'glass-panel border-b border-white/5 py-4' : 'bg-transparent py-6'
-      }`}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'glass-panel border-b border-white/5 py-4' : 'bg-transparent py-6'
+        }`}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3 font-bold text-xl tracking-tight text-white group cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+        <div className="flex items-center gap-3 font-bold text-xl tracking-tight text-white group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           {/* Updated Gradient: Red -> Purple */}
           <div className="bg-gradient-to-br from-red-600 via-purple-600 to-indigo-900 p-2 rounded-lg shadow-lg shadow-red-500/20 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-300">
             {/* Custom Quantum Core Processor Logo */}
@@ -61,7 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartCoding }) => {
           <Button variant="primary" size="sm" onClick={onStartCoding}>Get Started</Button>
         </div>
 
-        <button 
+        <button
           className="md:hidden text-zinc-400"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >

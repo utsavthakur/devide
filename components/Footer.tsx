@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2">
-             <div className="flex items-center gap-3 font-bold text-xl tracking-tight text-white mb-4">
+            <div className="flex items-center gap-3 font-bold text-xl tracking-tight text-white mb-4">
               {/* Updated Gradient: Red -> Purple */}
               <div className="bg-gradient-to-br from-red-600 via-purple-600 to-indigo-900 p-1.5 rounded-lg shadow-lg shadow-red-500/20 ring-1 ring-white/10">
                 {/* Custom Quantum Core Processor Logo */}
@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-           <div>
+          <div>
             <h4 className="font-bold text-white mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li><a href="#" className="hover:text-red-400 transition-colors">About</a></li>
@@ -67,7 +67,7 @@ const Footer: React.FC = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-zinc-900 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Codexia Inc. All rights reserved.</p>
           <div className="flex gap-6 text-sm text-zinc-500">

@@ -39,11 +39,15 @@ export default function NeuralBackground({
         const container = containerRef.current;
         if (!canvas || !container) return;
 
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", {
+            alpha: false, // Disable transparency for better performance
+            desynchronized: true // Allow async rendering
+        });
         if (!ctx) return;
 
         // --- MOBILE DETECTION ---
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        const isLowEndDevice = isMobile && (navigator.hardwareConcurrency || 4) < 4;
 
         // --- CONFIGURATION ---
         let width = container.clientWidth;
@@ -51,12 +55,16 @@ export default function NeuralBackground({
         let particles: Particle[] = [];
         let animationFrameId: number;
         let mouse = { x: -1000, y: -1000 }; // Start off-screen
+        let lastFrameTime = 0;
+        const targetFPS = isMobile ? 30 : 60; // Lower FPS on mobile
+        const frameInterval = 1000 / targetFPS;
 
-        // Mobile-optimized settings
-        const effectiveParticleCount = isMobile ? 80 : particleCount;
-        const effectiveSpeed = isMobile ? speed * 0.7 : speed;
+        // Mobile-optimized settings - MUCH more aggressive
+        const effectiveParticleCount = isLowEndDevice ? 30 : (isMobile ? 50 : particleCount);
+        const effectiveSpeed = isMobile ? speed * 0.5 : speed;
         const drawConnections = !isMobile; // Disable connections on mobile
-        const interactionRadius = isMobile ? 150 : 250;
+        const interactionRadius = isMobile ? 100 : 250;
+        const canvasScale = isMobile ? 0.75 : 1; // Lower resolution on mobile
 
         // --- PARTICLE CLASS ---
         class Particle {
@@ -137,11 +145,14 @@ export default function NeuralBackground({
 
         // --- INITIALIZATION ---
         const init = () => {
-            // Handle High-DPI screens (Retina)
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            ctx.scale(dpr, dpr);
+            // Handle High-DPI screens (Retina) - but reduce on mobile
+            const dpr = isMobile ? Math.min(window.devicePixelRatio || 1, 1.5) : (window.devicePixelRatio || 1);
+            const scaledWidth = width * canvasScale;
+            const scaledHeight = height * canvasScale;
+
+            canvas.width = scaledWidth * dpr;
+            canvas.height = scaledHeight * dpr;
+            ctx.scale(dpr * canvasScale, dpr * canvasScale);
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
 
@@ -153,11 +164,17 @@ export default function NeuralBackground({
 
 
         // --- ANIMATION LOOP ---
-        const animate = () => {
+        const animate = (currentTime: number) => {
+            // Frame rate limiting for mobile
+            const elapsed = currentTime - lastFrameTime;
+            if (elapsed < frameInterval) {
+                animationFrameId = requestAnimationFrame(animate);
+                return;
+            }
+            lastFrameTime = currentTime - (elapsed % frameInterval);
+
             // "Fade" effect: Instead of clearing the canvas, we draw a semi-transparent rect
             // This creates the "Trails" look.
-            // We use the background color of the parent or a dark overlay.
-            // Assuming dark mode for this effect usually:
             ctx.fillStyle = `rgba(0, 0, 0, ${trailOpacity})`;
             ctx.fillRect(0, 0, width, height);
 
@@ -214,18 +231,45 @@ export default function NeuralBackground({
             mouse.y = -1000;
         }
 
+        const handleTouchMove = (e: TouchEvent) => {
+            if (e.touches.length > 0) {
+                const rect = canvas.getBoundingClientRect();
+                mouse.x = e.touches[0].clientX - rect.left;
+                mouse.y = e.touches[0].clientY - rect.top;
+                e.preventDefault(); // Prevent scrolling while touching
+            }
+        };
+
+        const handleTouchEnd = () => {
+            mouse.x = -1000;
+            mouse.y = -1000;
+        };
+
         // Start
         init();
-        animate();
+        animate(0);
 
         window.addEventListener("resize", handleResize);
         container.addEventListener("mousemove", handleMouseMove);
         container.addEventListener("mouseleave", handleMouseLeave);
 
+        // Touch events for mobile
+        if (isMobile) {
+            container.addEventListener("touchmove", handleTouchMove, { passive: false });
+            container.addEventListener("touchend", handleTouchEnd);
+            container.addEventListener("touchcancel", handleTouchEnd);
+        }
+
         return () => {
             window.removeEventListener("resize", handleResize);
             container.removeEventListener("mousemove", handleMouseMove);
             container.removeEventListener("mouseleave", handleMouseLeave);
+
+            if (isMobile) {
+                container.removeEventListener("touchmove", handleTouchMove);
+                container.removeEventListener("touchend", handleTouchEnd);
+                container.removeEventListener("touchcancel", handleTouchEnd);
+            }
             cancelAnimationFrame(animationFrameId);
         };
     }, [color, trailOpacity, particleCount, speed]);

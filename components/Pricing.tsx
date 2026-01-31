@@ -41,20 +41,19 @@ const Pricing: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {tiers.map((tier) => (
-            <div 
+            <div
               key={tier.name}
-              className={`relative rounded-2xl p-8 flex flex-col ${
-                tier.recommended 
-                  ? 'bg-zinc-900 border-2 border-red-500 shadow-2xl shadow-red-900/20' 
+              className={`relative rounded-2xl p-8 flex flex-col ${tier.recommended
+                  ? 'bg-zinc-900 border-2 border-red-500 shadow-2xl shadow-red-900/20'
                   : 'bg-black border border-zinc-800'
-              }`}
+                }`}
             >
               {tier.recommended && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-red-600 to-purple-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
                   Most Popular
                 </div>
               )}
-              
+
               <div className="mb-8">
                 <h3 className="text-xl font-bold text-white mb-2">{tier.name}</h3>
                 <div className="flex items-baseline gap-1">

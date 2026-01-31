@@ -19,7 +19,7 @@ const FeatureSection: React.FC = () => {
           {FEATURES_DATA.map((feature, index) => {
             const Icon = icons[index % icons.length];
             return (
-              <div 
+              <div
                 key={index}
                 className="group p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-900/10 hover:border-red-900/30"
               >

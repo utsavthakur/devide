@@ -15,6 +15,18 @@ const Hero: React.FC<HeroProps> = ({ onStartCoding }) => {
 
   const videos = ['/b02.mp4', '/b03.mp4'];
 
+  // Mobile detection for performance optimization
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     const video1 = video1Ref.current;
     const video2 = video2Ref.current;
@@ -82,12 +94,12 @@ const Hero: React.FC<HeroProps> = ({ onStartCoding }) => {
         {/* Dark overlay to ensure text readability */}
         <div className="absolute inset-0 bg-black/90 backdrop-blur-[2px]"></div>
 
-        {/* Neural Flow Field Layer */}
+        {/* Neural Flow Field Layer - Optimized particle count for mobile */}
         <div className="absolute inset-0 z-[2] opacity-80">
           <NeuralBackground
             color="#ef4444" // Red-500 to match theme
             trailOpacity={0.08}
-            particleCount={400}
+            particleCount={isMobile ? 200 : 400} // Reduced for mobile
             speed={0.3} // Slower, more elegant movement
           />
         </div>
@@ -141,12 +153,13 @@ const Hero: React.FC<HeroProps> = ({ onStartCoding }) => {
         </div>
       </div>
 
-      {/* Background Gradients: Injected Red/Rose hues - now layered over video */}
+      {/* Background Gradients: Darker theme - removed purple for less fading */}
       <div className="absolute top-0 left-0 right-0 h-full overflow-hidden pointer-events-none z-[5]">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[120px]" />
-        {/* Changed from fuchsia to rose/red */}
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-red-900/15 rounded-full blur-[120px]" />
-        <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-indigo-900/10 rounded-full blur-[120px]" />
+        {/* Removed purple gradient - was making it too light/faded */}
+        {/* Subtle red accent */}
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-red-900/10 rounded-full blur-[120px]" />
+        {/* Very subtle indigo for depth */}
+        <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-indigo-950/8 rounded-full blur-[120px]" />
       </div>
 
       {/* Grid Pattern */}
