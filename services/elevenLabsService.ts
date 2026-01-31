@@ -1,12 +1,35 @@
 import { ElevenLabsClient } from 'elevenlabs';
 
-const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || '';
+const API_KEY_STORAGE = 'codexia_api_keys';
+
+// Get API key from localStorage or fallback to env
+const getApiKey = (): string => {
+    try {
+        const stored = localStorage.getItem(API_KEY_STORAGE);
+        if (stored) {
+            const keys = JSON.parse(stored);
+            if (keys.elevenlabs) return keys.elevenlabs;
+        }
+    } catch (e) {
+        console.error('Failed to load API key from localStorage:', e);
+    }
+    return import.meta.env.VITE_ELEVENLABS_API_KEY || '';
+};
 
 let client: ElevenLabsClient | null = null;
 
-if (apiKey && apiKey !== 'your_elevenlabs_api_key_here') {
-    client = new ElevenLabsClient({ apiKey });
-}
+// Initialize client with API key
+const initializeClient = () => {
+    const apiKey = getApiKey();
+    if (apiKey && apiKey !== 'your_elevenlabs_api_key_here') {
+        client = new ElevenLabsClient({ apiKey });
+        return true;
+    }
+    return false;
+};
+
+// Try to initialize on load
+initializeClient();
 
 // Popular ElevenLabs voices
 export const VOICES = {
@@ -94,6 +117,11 @@ export const synthesizeSpeech = async (
     text: string,
     options: SpeechOptions = {}
 ): Promise<void> => {
+    // Try to reinitialize client in case keys were just added
+    if (!client) {
+        initializeClient();
+    }
+
     if (!client) {
         console.warn('ElevenLabs API Key not configured');
         // Fallback to browser's speech synthesis
@@ -147,6 +175,10 @@ export const streamSpeech = async (
     text: string,
     options: SpeechOptions = {}
 ): Promise<void> => {
+    if (!client) {
+        initializeClient();
+    }
+
     if (!client) {
         speakWithBrowserAPI(text);
         return;

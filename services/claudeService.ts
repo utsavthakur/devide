@@ -1,15 +1,38 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const apiKey = import.meta.env.VITE_CLAUDE_API_KEY || '';
+const API_KEY_STORAGE = 'codexia_api_keys';
+
+// Get API key from localStorage or fallback to env
+const getApiKey = (): string => {
+  try {
+    const stored = localStorage.getItem(API_KEY_STORAGE);
+    if (stored) {
+      const keys = JSON.parse(stored);
+      if (keys.claude) return keys.claude;
+    }
+  } catch (e) {
+    console.error('Failed to load API key from localStorage:', e);
+  }
+  return import.meta.env.VITE_CLAUDE_API_KEY || '';
+};
 
 let client: Anthropic | null = null;
 
-if (apiKey && apiKey !== 'your_claude_api_key_here') {
-  client = new Anthropic({
-    apiKey,
-    dangerouslyAllowBrowser: true // Required for browser usage
-  });
-}
+// Initialize client with API key
+const initializeClient = () => {
+  const apiKey = getApiKey();
+  if (apiKey && apiKey !== 'your_claude_api_key_here') {
+    client = new Anthropic({
+      apiKey,
+      dangerouslyAllowBrowser: true
+    });
+    return true;
+  }
+  return false;
+};
+
+// Try to initialize on load
+initializeClient();
 
 export interface FileOperation {
   type: 'update_file' | 'switch_file';
@@ -30,10 +53,15 @@ export const generateCode = async (
   conversationHistory: ClaudeMessage[] = [],
   onToolCall?: (operation: FileOperation) => void
 ): Promise<{ response: string; operations: FileOperation[] }> => {
+  // Try to reinitialize client in case keys were just added
+  if (!client) {
+    initializeClient();
+  }
+
   if (!client) {
     console.warn('Claude API Key not configured');
     return {
-      response: 'Claude API is not configured. Please add your API key to .env.local',
+      response: 'Claude API key not found. Please enter your API key in the settings.',
       operations: []
     };
   }
@@ -89,17 +117,21 @@ export const generateCode = async (
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       tools,
-      system: `You are Codexia, an advanced AI software architect living inside a voice-first IDE. 
+      system: `You are a professional AI coding assistant inside a VS Code-style IDE.
 
-Users build software by talking to you. You have tools to write files and switch files.
+Core principles:
+- Be concise and professional
+- No emojis, no motivational talk
+- Sound like a senior software engineer
+- Always ask permission before modifying files
 
-When a user asks you to build something:
-1. Write the code immediately using the update_file tool
-2. Be concise and professional in your responses
-3. Confirm actions briefly (e.g., "Created App.tsx with your React component")
-4. Sound like a futuristic AI system - confident, precise, and helpful
+When a user requests code changes:
+1. Analyze the request
+2. Use update_file tool to propose changes
+3. Be clear about what files you're modifying
+4. Wait for user approval (the system handles this)
 
-Always provide clean, modern, production-ready code. Use TypeScript when appropriate.`,
+Provide clean, modern, production-ready code. Use TypeScript when appropriate.`,
       messages
     });
 
@@ -117,7 +149,7 @@ Always provide clean, modern, production-ready code. Use TypeScript when appropr
           content: (block.input as any).content
         };
         operations.push(operation);
-        
+
         if (onToolCall) {
           onToolCall(operation);
         }
@@ -125,7 +157,7 @@ Always provide clean, modern, production-ready code. Use TypeScript when appropr
     }
 
     return {
-      response: textResponse || 'I\'ve completed the requested operations.',
+      response: textResponse || 'I\'ve prepared the requested changes.',
       operations
     };
 
@@ -148,7 +180,11 @@ export const streamCode = async (
   onToolCall?: (operation: FileOperation) => void
 ): Promise<FileOperation[]> => {
   if (!client) {
-    onChunk('Claude API is not configured. Please add your API key to .env.local');
+    initializeClient();
+  }
+
+  if (!client) {
+    onChunk('Claude API key not configured. Please enter your API key in the settings.');
     return [];
   }
 
@@ -191,7 +227,7 @@ export const streamCode = async (
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       tools,
-      system: `You are Codexia, an advanced AI software architect in a voice-first IDE. Be concise, professional, and provide production-ready code.`,
+      system: `You are a professional AI coding assistant. Be concise and provide production-ready code.`,
       messages
     });
 
@@ -200,13 +236,11 @@ export const streamCode = async (
     for await (const chunk of stream) {
       if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
         onChunk(chunk.delta.text);
-      } else if (chunk.type === 'content_block_start' && chunk.content_block.type === 'tool_use') {
-        // Tool use will be in the final message
       }
     }
 
     const finalMessage = await stream.finalMessage();
-    
+
     for (const block of finalMessage.content) {
       if (block.type === 'tool_use') {
         const operation: FileOperation = {
@@ -215,7 +249,7 @@ export const streamCode = async (
           content: (block.input as any).content
         };
         operations.push(operation);
-        
+
         if (onToolCall) {
           onToolCall(operation);
         }

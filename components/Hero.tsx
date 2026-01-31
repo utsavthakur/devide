@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from './Button';
 import { ChevronRight, Github, Laptop } from 'lucide-react';
 import NeuralBackground from './ui/flow-field-background';
@@ -12,6 +13,17 @@ const Hero: React.FC<HeroProps> = ({ onStartCoding }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const video1Ref = useRef<HTMLVideoElement>(null);
   const video2Ref = useRef<HTMLVideoElement>(null);
+
+  // Scroll Text State
+  const [textIndex, setTextIndex] = useState(0);
+  const phrases = ["reimagined for the web", "code at the speed of thought", "with codexia"];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTextIndex((prev) => (prev + 1) % phrases.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const videos = ['/b02.mp4', '/b03.mp4'];
 
@@ -115,15 +127,41 @@ const Hero: React.FC<HeroProps> = ({ onStartCoding }) => {
             <ChevronRight className="w-4 h-4 text-red-400 group-hover:text-white transition-colors" />
           </div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-b from-white via-purple-100 to-zinc-400 max-w-5xl">
-            Development environment <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-purple-600">reimagined for the web</span>
-          </h1>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 max-w-5xl"
+          >
+            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-purple-100 to-zinc-400">
+              Development environment
+            </span>
+            <br />
+            <div className="h-[1.1em] overflow-hidden relative inline-block">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={textIndex}
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -40, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-purple-600 block"
+                >
+                  {phrases[textIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+          </motion.h1>
 
-          <p className="text-lg md:text-xl text-zinc-400 mb-10 max-w-2xl leading-relaxed">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
+            className="text-lg md:text-xl text-zinc-400 mb-10 max-w-2xl leading-relaxed"
+          >
             Spin up full-stack dev environments in seconds. Collaborate in real-time.
             Deploy with one click. No setup required.
-          </p>
+          </motion.p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
             <Button variant="primary" size="lg" className="w-full sm:w-auto gap-2 group" onClick={onStartCoding}>
