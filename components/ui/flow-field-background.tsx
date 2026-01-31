@@ -42,12 +42,21 @@ export default function NeuralBackground({
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
+        // --- MOBILE DETECTION ---
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
         // --- CONFIGURATION ---
         let width = container.clientWidth;
         let height = container.clientHeight;
         let particles: Particle[] = [];
         let animationFrameId: number;
         let mouse = { x: -1000, y: -1000 }; // Start off-screen
+
+        // Mobile-optimized settings
+        const effectiveParticleCount = isMobile ? 80 : particleCount;
+        const effectiveSpeed = isMobile ? speed * 0.7 : speed;
+        const drawConnections = !isMobile; // Disable connections on mobile
+        const interactionRadius = isMobile ? 150 : 250;
 
         // --- PARTICLE CLASS ---
         class Particle {
@@ -74,14 +83,13 @@ export default function NeuralBackground({
                 const angle = (Math.cos(this.x * 0.005) + Math.sin(this.y * 0.005)) * Math.PI;
 
                 // 2. Add force from flow field
-                this.vx += Math.cos(angle) * 0.2 * speed;
-                this.vy += Math.sin(angle) * 0.2 * speed;
+                this.vx += Math.cos(angle) * 0.2 * effectiveSpeed;
+                this.vy += Math.sin(angle) * 0.2 * effectiveSpeed;
 
                 // 3. Mouse Repulsion/Attraction (ENHANCED SENSITIVITY)
                 const dx = mouse.x - this.x;
                 const dy = mouse.y - this.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                const interactionRadius = 250; // Increased from 150 for wider effect
 
                 if (distance < interactionRadius) {
                     const force = (interactionRadius - distance) / interactionRadius;
@@ -138,7 +146,7 @@ export default function NeuralBackground({
             canvas.style.height = `${height}px`;
 
             particles = [];
-            for (let i = 0; i < particleCount; i++) {
+            for (let i = 0; i < effectiveParticleCount; i++) {
                 particles.push(new Particle());
             }
         };
@@ -154,24 +162,27 @@ export default function NeuralBackground({
             ctx.fillRect(0, 0, width, height);
 
             // Draw connections between nearby particles FIRST (so they appear behind particles)
-            const connectionDistance = 120; // Max distance to draw connections
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 0.5;
+            // ONLY ON DESKTOP - this is expensive!
+            if (drawConnections) {
+                const connectionDistance = 120; // Max distance to draw connections
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 0.5;
 
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    if (distance < connectionDistance) {
-                        // Opacity based on distance (closer = more opaque)
-                        const opacity = (1 - distance / connectionDistance) * 0.3;
-                        ctx.globalAlpha = opacity;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
+                        if (distance < connectionDistance) {
+                            // Opacity based on distance (closer = more opaque)
+                            const opacity = (1 - distance / connectionDistance) * 0.3;
+                            ctx.globalAlpha = opacity;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
                     }
                 }
             }
